@@ -1,0 +1,50 @@
+# Single source of truth for the sector definition.
+# Every notebook and script (Step 0, Step 1, ...) reads this file.
+# To change the query: edit here, bump `version`, commit, and re-run the notebooks.
+
+version: v1                 # bump when codes/keywords change; used in output file names
+env: TEST                   # TEST while developing, PROD for the final numbers
+
+sector:
+  name: Flying drones
+
+  cpc_prefixes:             # match if any CPC symbol starts with one of these (spaces ignored)
+    - B64U                  # unmanned aerial vehicles [UAV]
+    - B64C39/024            # aircraft characterised by special use: remote-controlled vehicle type
+
+  ipc_prefixes:
+    - B64U
+
+  keywords:                 # case-insensitive, searched in titles and abstracts
+    - unmanned aerial
+    - unmanned aircraft
+    - unmanned air vehicle
+    - unpiloted aerial
+    - unpiloted aircraft
+    - unpiloted air vehicle
+    - remotely piloted aircraft
+    - micro air vehicle
+    - quadrotor
+    - quadrocopter
+    - quadcopter
+    - multicopter
+    - multirotor
+    - multi-rotor
+    - hexacopter
+    - octocopter
+    - " uav"                # quoted: the spaces matter
+    - "uav "
+    - drone                 # contested: keep only if hand-labelling supports it
+
+time:
+  year_min: 2000
+  year_max: 2022
+  family_time_column: earliest_filing_year   # family year = earliest priority (PW rule)
+  appln_time_column: appln_filing_year
+  truncated_years:                           # last N years still incomplete in PATSTAT
+    appln_filing_year: 3
+    earliest_filing_year: 3
+    earliest_publn_year: 1
+
+counting:
+  ipr_type: PI              # patents of invention only (no utility models)
