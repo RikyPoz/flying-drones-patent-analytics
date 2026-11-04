@@ -1,2 +1,3 @@
-families checked,agreement,agreement 95% CI min,agreement 95% CI max,Cohen's kappa
-20.0,0.75,0.5312949900419365,0.888139947210597,0.5
+prompt,families checked,agreement,agreement 95% CI min,agreement 95% CI max,Cohen's kappa,LLM said incerto
+v1-it,20,0.75,0.5312949900419365,0.888139947210597,0.5,0
+v2-en,20,0.85,0.6395767041130426,0.9476322080405041,0.6666666666666666,0
