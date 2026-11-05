@@ -1,1 +1,9 @@
-pyyaml
+pandas
+numpy
+matplotlib
+sqlalchemy
+pyarrow
+sentence-transformers
+langchain-core
+langchain-openai
+pydantic
