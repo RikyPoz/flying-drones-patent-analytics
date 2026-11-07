@@ -47,18 +47,7 @@ Rule for every hand label: *pertinente* only if the text states or clearly impli
 
 1. `validate_sample` draws a random sample of families from each of the four groups (filter kept / rejected, enrichment added / not added; 25 or 100 families, seed 42) and asks the LLM (gpt-4.1-mini, temperature 0) whether each is about flying drones, from the title and the longest English abstract of the family.
 2. `evaluate_selection` estimates precision and recall from the samples (stratified estimator, 95% Wilson intervals). If some answers are `incerto`, it writes them to the review file and asks for a hand label.
-3. `enrichment_threshold_sweep` and `compare_dataset_options` / `enrichment_impact` are the enrichment tests. They are not called by `1-DataPreparation`; they were run once in a temporary cell (calls in the validation notes) and their results are the CSV files above.
+3. `enrichment_threshold_sweep` and `compare_dataset_options` / `enrichment_impact` are the enrichment tests. They are not called by `1-DataPreparation`; they were run once in a temporary cell and their results are the CSV files above.
 4. `2b-LLMHandCheck.ipynb` compares the LLM labels with the blind human labels. It makes no LLM calls.
 
 Cost: about 5 cents per 100 LLM calls; 425 calls so far. Re-runs are free thanks to the cache.
-
-## Where the enrichment is set (in `1-DataPreparation.ipynb`)
-
-| Cell | What |
-|---|---|
-| Settings cell (2) | `TAU_ENRICH = 0.60` (similarity threshold), `YEARS` |
-| Section 3, cell 15 | `EXTERNAL_IPC_CODES`, `EXTERNAL_CPC_CODES = ("B64", "G05D1/", "G08G5/")`: the broad pool searched by the enrichment |
-| Cells 16–19 | query of the pool, English abstracts, SBERT similarity |
-| Cell 20 | applications above `TAU_ENRICH` → `df_enrichment` |
-| Cell 21 | `df_selected = df_filtered + df_enrichment`: **to drop the enrichment, use only `df_filtered` here** |
-| Cell 22 | split into the four validation groups |
