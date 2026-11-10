@@ -1,0 +1,2 @@
+selected_families,rejected_families,sample_selected,sample_rejected,precision,precision_CI95_low,precision_CI95_high,recall_within_pool,recall_range_low,recall_range_high,F1,relevant_share_in_rejected,rejected_share_CI95_low,rejected_share_CI95_high,to_check_by_hand,estimated_drone_families_kept,estimated_drone_families_lost
+166104.0,15678.0,100.0,100.0,0.88,0.8019,0.93,0.9395,0.9248,0.9515,0.9088,0.6,0.502,0.6906,0.0,146171.52,9406.8
