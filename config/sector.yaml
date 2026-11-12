@@ -2,7 +2,7 @@
 # Change the values here, not in the notebooks, and bump `version`.
 version: v2
 
-env: TEST                 # TEST while developing, PROD for the final numbers: all steps must use the same
+env: PROD                 # TEST while developing, PROD for the final numbers: all steps must use the same
 
 sector:
   name: Flying drones
