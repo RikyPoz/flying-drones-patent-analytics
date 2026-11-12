@@ -1,0 +1,22 @@
+# Shared settings for every notebook of the project (kick-off: "config, not hard-coding").
+# Change the values here, not in the notebooks, and bump `version`.
+version: v2
+
+env: TEST                 # TEST while developing, PROD for the final numbers: all steps must use the same
+
+sector:
+  name: Flying drones
+
+years:
+  min: 2000               # first priority year (literature evidence: PR #3, literature_start_year_keywords)
+  max: 2025               # last year available in the PATSTAT edition
+  truncated: 3            # last years incomplete (18-month publication lag): shaded, excluded from growth
+  family_time_column: earliest_filing_year   # family level: earliest priority year (PW rule)
+  appln_time_column: appln_filing_year       # application level: the application's own filing year
+
+counting:
+  ipr_type: PI            # patents of invention only (no utility models), as in the extraction
+
+paths:                    # data files on TIP (not committed: bulk PATSTAT extracts stay out of the repo)
+  df_selected: /home/jovyan/progetto/df_selected.parquet   # output of Step0/1-DataPreparation
+  extract_dir: /home/jovyan/progetto/extract               # output of the extraction, one folder per env
