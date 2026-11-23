@@ -1,0 +1,17 @@
+STEP 0 — APPLICANT HARMONIZATION PROGRESS
+Updated: 4 November 2026 | Environment: PATSTAT TEST
+
+Purpose
+Standardize patent applicant/company identities so that different names for the same organization do not distort company-level patent analysis.
+
+Yesterday — Initial experiment
+I used Riky's provisional selection of 2,892 DOCDB families and retrieved 5,031 application–applicant relationships. I tested PATSTAT PSN, dictionary-based name cleaning, and Cleanco, and generated candidate alias groups for review.
+
+Today — Integration with Rosa's extraction
+I ran Rosa's extraction and reused its applicant data instead of querying applicants again. Her year and invention-patent (PI) filters reduced the working set to 2,656 families. My harmonization processed 4,735 applicant relationships, covering 2,636 families; 20 families had no applicant records. It produced 2,448 provisional harmonized entity IDs and 29 potential alias groups.
+
+Main difference
+The harmonization method is essentially the same; the input population is now aligned with Rosa's filtered extraction. Lower record counts reflect the smaller patent set, not necessarily better or worse cleaning.
+
+Next step
+Manually review the 29 alias groups in alias_review_groups.csv, record MERGE / KEEP_SEPARATE / UNCERTAIN decisions, and apply only confirmed changes to the final company mapping. All review decision fields are currently blank. Results remain provisional until the patent selection and final dataset are validated.
