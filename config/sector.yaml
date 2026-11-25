@@ -20,3 +20,8 @@ counting:
 paths:                    # data files on TIP (not committed: bulk PATSTAT extracts stay out of the repo)
   df_selected: /home/jovyan/progetto/df_selected.parquet   # output of Step0/1-DataPreparation
   extract_dir: /home/jovyan/progetto/extract               # output of the extraction, one folder per env
+  harmonization_dir: /home/jovyan/progetto/harmonization     # output of Step0/3b, one folder per env
+  step2_dir: /home/jovyan/progetto/step2
+
+query:
+  cpc_prefixes: [B64U, B64C39/024, G08G5/57]

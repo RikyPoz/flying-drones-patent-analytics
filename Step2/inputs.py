@@ -1,13 +1,28 @@
 """Read the sealed drone cohort and attach the course's all-field filing history."""
 
+from pathlib import Path
+
 import pandas as pd
 
 
-FAMILIES = "extract/families.parquet"
-LINKS = "harmonization/family_applicant_links.csv"
-ATTRIBUTES = "harmonization/applicants_harmonized.csv"
-CPC = "extract/tls224_cpc.parquet"
-FIRST_EVER = "step2/first_patent_year.parquet"
+# FAMILIES = "extract/families.parquet"
+# LINKS = "harmonization/family_applicant_links.csv"
+# ATTRIBUTES = "harmonization/applicants_harmonized.csv"
+# CPC = "extract/tls224_cpc.parquet"
+# FIRST_EVER = "step2/first_patent_year.parquet"
+
+FAMILIES = "families.parquet"                  # NEW: in extract_dir
+CPC = "tls224_cpc.parquet"                     # NEW: in extract_dir
+LINKS = "family_applicant_links.csv"           # NEW: in harmonization_dir
+ATTRIBUTES = "applicants_harmonized.csv"       # NEW: in harmonization_dir
+FIRST_EVER = "first_patent_year.parquet"       # NEW: in the Step 2 output folder
+
+
+def _need(path):
+    """Like Step 1's read_extract: stop with a clear message if a Step 0 file is missing."""
+    if not Path(path).is_file():
+        raise FileNotFoundError(f"{path} not found. Run Step0/3 (extraction) and Step0/3b (harmonization) first.")
+    return path
 
 
 def applicant_type(psn_sector):
@@ -23,22 +38,27 @@ def applicant_type(psn_sector):
     return "unknown"
 
 
-def load_inputs(run):
+# def load_inputs(run):
+def load_inputs(extract_dir, harmonization_dir, year_min, year_max):
     """Return extracted family years, unique family–applicant links and family CPCs."""
     families = pd.read_parquet(
-        run.verify(FAMILIES), columns=["docdb_family_id", "priority_year"]
+        # run.verify(FAMILIES), columns=["docdb_family_id", "priority_year"]
+        _need(extract_dir / FAMILIES), columns=["docdb_family_id", "priority_year"]
     ).rename(columns={"docdb_family_id": "unit_id", "priority_year": "year"})
-    year_range = run.cfg["years"]
+    # year_range = run.cfg["years"]
     if (families.isna().any().any() or families["unit_id"].duplicated().any()
-            or not families["year"].between(year_range["min"], year_range["max"]).all()):
+            # or not families["year"].between(year_range["min"], year_range["max"]).all()):
+            or not families["year"].between(year_min, year_max).all()):
         raise ValueError("Extracted families need one in-window priority year per family ID.")
 
     # An empty field denotes missing data. 'NA' is a valid country code (Namibia).
     csv_options = {"keep_default_na": False, "na_values": [""]}
     keys = ["docdb_family_id", "entity_id"]
-    links = pd.read_csv(run.verify(LINKS), usecols=keys, **csv_options)
+    # links = pd.read_csv(run.verify(LINKS), usecols=keys, **csv_options)
+    links = pd.read_csv(_need(harmonization_dir / LINKS), usecols=keys, **csv_options)
     records = pd.read_csv(
-        run.verify(ATTRIBUTES),
+        # run.verify(ATTRIBUTES),
+        _need(harmonization_dir / ATTRIBUTES),
         usecols=keys + ["standardized_name", "psn_sector", "person_ctry_code", "needs_manual_review"],
         dtype={"entity_id": "string", "person_ctry_code": "string", "needs_manual_review": "boolean"},
         **csv_options,
@@ -73,26 +93,29 @@ def load_inputs(run):
         columns={"docdb_family_id": "unit_id", "entity_id": "applicant"}
     )
     links["name"] = links["name"].fillna(links["applicant"])
-    cpc = pd.read_parquet(run.verify(CPC), columns=["docdb_family_id", "cpc"]).rename(
+    # cpc = pd.read_parquet(run.verify(CPC), columns=["docdb_family_id", "cpc"]).rename(
+    cpc = pd.read_parquet(_need(extract_dir / CPC), columns=["docdb_family_id", "cpc"]).rename(
         columns={"docdb_family_id": "unit_id"}
     )
     cpc["cpc"] = cpc["cpc"].astype("string").str.replace(" ", "", regex=False)
     cpc = cpc.drop_duplicates().copy()
     if not links["unit_id"].isin(families["unit_id"]).all() or not cpc["unit_id"].isin(families["unit_id"]).all():
-        raise ValueError("Applicant or CPC records reference a family outside this run's extract.")
+        raise ValueError("Applicant or CPC records reference a family outside this extract.")
 
     links = links.merge(families, on="unit_id", validate="many_to_one")
     family_cpc = cpc.dropna(subset=["cpc"]).merge(families, on="unit_id", validate="many_to_one")
     return families, links, family_cpc
 
 
-def _query_first_years(run, applicants):
+# def _query_first_years(run, applicants):
+def _query_first_years(env, year_max, applicants):
     """Step 2's PATSTAT lookup, across every sector, office and IPR type."""
     from epo.tipdata.patstat import PatstatClient
     from epo.tipdata.patstat.database.models import TLS201_APPLN, TLS206_PERSON, TLS207_PERS_APPLN
     from sqlalchemy import func
 
-    client = PatstatClient(env=run.env)
+    # client = PatstatClient(env=run.env)
+    client = PatstatClient(env=env)
     db = client.orm()
     result = pd.Series(pd.NA, index=applicants, dtype="Int64", name="first_patent_year")
     year = TLS201_APPLN.earliest_filing_year
@@ -111,7 +134,8 @@ def _query_first_years(run, applicants):
                 .join(TLS207_PERS_APPLN, TLS207_PERS_APPLN.person_id == TLS206_PERSON.person_id)
                 .join(TLS201_APPLN, TLS201_APPLN.appln_id == TLS207_PERS_APPLN.appln_id)
                 .filter(column.in_(chunk), TLS207_PERS_APPLN.applt_seq_nr > 0,
-                        year.between(1900, run.cfg["years"]["max"]))
+                        # year.between(1900, run.cfg["years"]["max"]))
+                        year.between(1900, year_max))
                 .group_by(column)
             )
             hits = client.df(q)
@@ -121,22 +145,22 @@ def _query_first_years(run, applicants):
     return result
 
 
-def load_first_ever(run, links):
-    """Query once on TIP; later reads verify the same run's published first-year table."""
+# def load_first_ever(run, links):
+def load_first_ever(links, output_dir, env, year_max):
+    """Query PATSTAT once on TIP, save the table, and reuse it on later runs."""
     applicants = pd.Index(sorted(links["applicant"].unique()), name="applicant")
-    if run.path(FIRST_EVER).exists():
-        frame = pd.read_parquet(run.verify(FIRST_EVER))
+    path = output_dir / FIRST_EVER
+    # if run.path(FIRST_EVER).exists():
+    #     frame = pd.read_parquet(run.verify(FIRST_EVER))
+    if path.exists():
+        frame = pd.read_parquet(path)
         first_ever = frame.set_index("applicant", verify_integrity=True)["first_patent_year"]
         if not first_ever.index.sort_values().equals(applicants):
-            raise ValueError("Filing history and input applicant identities differ.")
+            raise ValueError(f"{path} belongs to other applicants (a different Step 0 run): delete it and rerun.")
         return first_ever.astype("Int64")
 
-    first_ever = _query_first_years(run, applicants)
-    run.publish(
-        FIRST_EVER, lambda path: first_ever.reset_index().to_parquet(path, index=False),
-        inputs=(LINKS,),
-        metadata={"source": "PATSTAT TLS206/TLS207/TLS201; all-field applicant history",
-                  "first_year": 1900, "last_year": run.cfg["years"]["max"],
-                  "entities": len(applicants), "unknown": int(first_ever.isna().sum())},
-    )
+    # first_ever = _query_first_years(run, applicants)
+    # run.publish(FIRST_EVER, ..., inputs=(LINKS,), metadata={...})
+    first_ever = _query_first_years(env, year_max, applicants)
+    first_ever.reset_index().to_parquet(path, index=False)
     return first_ever
