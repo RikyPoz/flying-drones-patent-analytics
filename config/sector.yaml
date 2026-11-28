@@ -9,10 +9,15 @@ sector:
 
 years:
   min: 2000               # first priority year (literature evidence: PR #3, literature_start_year_keywords)
-  max: 2025               # last year available in the PATSTAT edition
+  max: 2025               # last year available in the PATSTAT edition, no family can have a priority year > query_max (2024)
   truncated: 3            # last years incomplete (18-month publication lag): shaded, excluded from growth
+  query_min: 2000    # filing years searched by the 1b query
+  query_max: 2024
   family_time_column: earliest_filing_year   # family level: earliest priority year (PW rule)
   appln_time_column: appln_filing_year       # application level: the application's own filing year
+
+sbert:
+  tau_filter: -1.0 # -1 = no filter; chosen in validation/tau_filter_calibration.csv
 
 counting:
   ipr_type: PI            # patents of invention only (no utility models), as in the extraction
